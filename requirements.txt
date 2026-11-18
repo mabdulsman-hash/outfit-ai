@@ -1,0 +1,6 @@
+streamlit>=1.39
+pandas
+openpyxl
+numpy
+opencv-python-headless<5
+SpeechRecognition

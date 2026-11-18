@@ -13,6 +13,8 @@ GENDER = ["Pria", "Wanita"]
 
 if "profil" not in st.session_state:
     st.session_state.profil = {"gender": "Pria", "bb": 60.0, "tb": 170.0, "acara": "Kuliah", "gaya": "Kasual", "warna_kulit": "Sedang"}
+if "variasi" not in st.session_state:
+    st.session_state.variasi = 0
 if "log" not in st.session_state:
     st.session_state.log = []
 p = st.session_state.profil
@@ -32,6 +34,7 @@ def terapkan_teks(teks):
 # ---------------- Sidebar: profil (bisa diubah manual) ----------------
 with st.sidebar:
     st.header("Profil kamu")
+    p["nama"] = st.text_input("Nama (opsional)", p.get("nama", ""))
     p["gender"] = st.radio("Gender", GENDER, index=GENDER.index(p["gender"]), horizontal=True)
     p["bb"] = st.number_input("Berat badan (kg)", 30.0, 200.0, float(p["bb"]), 1.0)
     p["tb"] = st.number_input("Tinggi badan (cm)", 120.0, 220.0, float(p["tb"]), 1.0)
@@ -91,21 +94,41 @@ with tab_kamera:
         st.caption("Foto hanya diproses sesaat dan tidak disimpan.")
 
 # ---------------- Hasil ----------------
+import base64
 st.divider()
-st.subheader("✨ Rekomendasi outfit")
+sapa = f", {p['nama']}" if p.get("nama") else ""
+st.subheader(f"✨ Rekomendasi outfit untukmu{sapa}")
 try:
-    h = engine.rekomendasi(p, kb())
+    h = engine.rekomendasi(p, kb(), variasi=st.session_state.variasi)
+    st.markdown(
+        f"**{p['gender']}** · acara **{p['acara']}** · gaya **{p['gaya']}** · kulit **{p['warna_kulit']}** · "
+        f"proporsi tubuh **{h['tipe_tubuh']}** (BMI {h['bmi']}) · tinggi **{h['kategori_tinggi']}** ({p['tb']:.0f} cm)")
+    if st.button("🔄 Tampilkan variasi look lain"):
+        st.session_state.variasi += 1
+        st.rerun()
+
+    kolom = st.columns(len(h["looks"]))
+    for kol, look in zip(kolom, h["looks"]):
+        with kol:
+            b64 = base64.b64encode(look["svg"].encode()).decode()
+            st.markdown(f'<div style="text-align:center"><img src="data:image/svg+xml;base64,{b64}" style="max-height:340px"></div>', unsafe_allow_html=True)
+            st.markdown(f"### {look['nama']}")
+            st.markdown(f"- **Atasan:** {look['atasan']} (warna {look['warna_atasan']})")
+            bawah = look["bawahan"] + (f" (warna {look['warna_bawahan']})" if look["warna_bawahan"] else "")
+            st.markdown(f"- **Bawahan:** {bawah}")
+            st.markdown(f"- **Alas kaki:** {look['alas_kaki']} ({look['warna_sepatu']})")
+            st.markdown(f"- **Aksesori:** {look['aksesori']}")
+
+    st.markdown("#### Kenapa cocok untukmu")
     c1, c2 = st.columns(2)
     with c1:
-        st.markdown(f"**Profil:** {p['gender']}, {p['acara']}, gaya {p['gaya']}, kulit {p['warna_kulit']}")
-        st.markdown(f"**Proporsi tubuh:** {h['tipe_tubuh']} (BMI {h['bmi']})")
-        for k, v in h["outfit"].items():
-            st.markdown(f"- **{k}:** {v}")
+        st.markdown(f"**Potongan sesuai tubuh ({h['tipe_tubuh']}):** {h['potongan']}")
+        st.markdown(f"**Hindari potongan:** {h['hindari_potongan']}")
+        st.markdown(f"**Sesuai tinggi ({h['kategori_tinggi']}):** {h['saran_tinggi']}")
     with c2:
-        st.markdown(f"**Potongan yang cocok:** {h['potongan']}")
-        st.markdown(f"**Hindari:** {h['hindari_potongan']}")
-        st.markdown(f"**Warna yang cocok:** {h['warna_cocok']}")
+        st.markdown(f"**Warna:** semua warna atasan di atas dipilih dari palet yang cocok untuk kulit {p['warna_kulit']}.")
         st.markdown(f"**Hindari warna:** {h['warna_hindari']}")
-        st.markdown(f"**Catatan gaya:** {h['catatan_gaya']}")
+        st.markdown(f"**Catatan gaya {p['gaya']}:** {h['catatan_gaya']}")
+    st.caption("Gambar maneken hanya ilustrasi warna dan proporsi, bukan foto asli.")
 except Exception as e:
     st.error(f"Data belum lengkap: {e}")

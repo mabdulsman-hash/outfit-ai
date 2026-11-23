@@ -2,6 +2,13 @@
 Jalankan:  streamlit run app.py"""
 import streamlit as st
 import engine
+import tryon
+
+try:
+    import tryon_kamera
+    KAMERA_OK, KAMERA_ERR = True, ""
+except Exception as e:  # library kamera belum terpasang / gagal dimuat
+    KAMERA_OK, KAMERA_ERR = False, str(e)
 
 st.set_page_config(page_title="Rekomendasi Outfit AI", page_icon="👗", layout="wide")
 st.title("👗 Rekomendasi Outfit AI")
@@ -110,8 +117,12 @@ try:
     kolom = st.columns(len(h["looks"]))
     for kol, look in zip(kolom, h["looks"]):
         with kol:
-            b64 = base64.b64encode(look["svg"].encode()).decode()
-            st.markdown(f'<div style="text-align:center"><img src="data:image/svg+xml;base64,{b64}" style="max-height:340px"></div>', unsafe_allow_html=True)
+            gambar_look = tryon.komposisi_flatlay(tryon.spec_dari_look(look))
+            if gambar_look is not None:
+                st.image(gambar_look, use_container_width=True)
+            else:
+                b64 = base64.b64encode(look["svg"].encode()).decode()
+                st.markdown(f'<div style="text-align:center"><img src="data:image/svg+xml;base64,{b64}" style="max-height:340px"></div>', unsafe_allow_html=True)
             st.markdown(f"### {look['nama']}")
             st.markdown(f"- **Atasan:** {look['atasan']} (warna {look['warna_atasan']})")
             bawah = look["bawahan"] + (f" (warna {look['warna_bawahan']})" if look["warna_bawahan"] else "")
@@ -129,6 +140,15 @@ try:
         st.markdown(f"**Warna:** semua warna atasan di atas dipilih dari palet yang cocok untuk kulit {p['warna_kulit']}.")
         st.markdown(f"**Hindari warna:** {h['warna_hindari']}")
         st.markdown(f"**Catatan gaya {p['gaya']}:** {h['catatan_gaya']}")
-    st.caption("Gambar maneken hanya ilustrasi warna dan proporsi, bukan foto asli.")
+    st.caption("Kalau foto pakaian belum ada di folder assets, yang tampil adalah maneken ilustrasi.")
+
+    st.divider()
+    st.subheader("📷 Coba langsung di kamera")
+    pilih = st.radio("Pilih look yang mau dicoba", [l["nama"] for l in h["looks"]], horizontal=True)
+    look_pilih = next(l for l in h["looks"] if l["nama"] == pilih)
+    if KAMERA_OK:
+        tryon_kamera.render_kamera(look_pilih)
+    else:
+        st.info(f"Fitur kamera belum aktif ({KAMERA_ERR}). Cek requirements.txt.")
 except Exception as e:
     st.error(f"Data belum lengkap: {e}")

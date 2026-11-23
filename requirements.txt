@@ -1,8 +1,7 @@
-streamlit>=1.39
+streamlit
 pandas
 openpyxl
 numpy
-opencv-python-headless<5
 SpeechRecognition
 streamlit-webrtc
 mediapipe==0.10.14

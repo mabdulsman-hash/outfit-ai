@@ -4,3 +4,7 @@ openpyxl
 numpy
 opencv-python-headless<5
 SpeechRecognition
+streamlit-webrtc
+mediapipe==0.10.14
+opencv-python-headless
+av

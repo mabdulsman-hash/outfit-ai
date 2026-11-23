@@ -21,6 +21,8 @@ import cv2
 import numpy as np
 
 ASSET_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
+if os.path.isdir(os.path.join(ASSET_DIR, "assets")):  # folder terunggah bertumpuk: assets/assets/...
+    ASSET_DIR = os.path.join(ASSET_DIR, "assets")
 _cache = {}
 
 

@@ -2,7 +2,11 @@
 Jalankan:  streamlit run app.py"""
 import streamlit as st
 import engine
-import tryon
+
+try:
+    import tryon
+except Exception:  # OpenCV belum siap -> pakai maneken ilustrasi saja
+    tryon = None
 
 try:
     import tryon_kamera
@@ -117,7 +121,7 @@ try:
     kolom = st.columns(len(h["looks"]))
     for kol, look in zip(kolom, h["looks"]):
         with kol:
-            gambar_look = tryon.komposisi_flatlay(tryon.spec_dari_look(look))
+            gambar_look = tryon.komposisi_flatlay(tryon.spec_dari_look(look)) if tryon else None
             if gambar_look is not None:
                 st.image(gambar_look, use_container_width=True)
             else:
@@ -146,7 +150,7 @@ try:
     st.subheader("📷 Coba langsung di kamera")
     pilih = st.radio("Pilih look yang mau dicoba", [l["nama"] for l in h["looks"]], horizontal=True)
     look_pilih = next(l for l in h["looks"] if l["nama"] == pilih)
-    if KAMERA_OK:
+    if KAMERA_OK and tryon:
         tryon_kamera.render_kamera(look_pilih)
     else:
         st.info(f"Fitur kamera belum aktif ({KAMERA_ERR}). Cek requirements.txt.")
